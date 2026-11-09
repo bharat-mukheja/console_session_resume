@@ -1,0 +1,235 @@
+{
+  "name": "console-session-resume",
+  "displayName": "Console Session Resume",
+  "description": "Separate, reboot-persistent command history for native Bash, Zsh, Fish, and PowerShell terminals.",
+  "version": "0.2.0",
+  "publisher": "local-tools",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "terminal": {
+      "profiles": [
+        {
+          "id": "sessionResume.bash",
+          "title": "Bash (Session Resume)",
+          "icon": "history"
+        },
+        {
+          "id": "sessionResume.zsh",
+          "title": "Zsh (Session Resume)",
+          "icon": "history"
+        },
+        {
+          "id": "sessionResume.fish",
+          "title": "Fish (Session Resume)",
+          "icon": "history"
+        },
+        {
+          "id": "sessionResume.pwsh",
+          "title": "PowerShell (Session Resume)",
+          "icon": "history"
+        },
+        {
+          "id": "sessionResume.powershell",
+          "title": "Windows PowerShell (Session Resume)",
+          "icon": "history"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "sessionResume.newTerminal",
+        "title": "Session Resume: New Terminal",
+        "icon": "$(add)"
+      },
+      {
+        "command": "sessionResume.resumeTerminal",
+        "title": "Session Resume: Resume Saved Terminal",
+        "icon": "$(search)"
+      },
+      {
+        "command": "sessionResume.useAsDefault",
+        "title": "Session Resume: Use as Default Terminal"
+      },
+      {
+        "command": "sessionResume.openHistory",
+        "title": "Session Resume: Open This Terminal's History File"
+      },
+      {
+        "command": "sessionResume.resumeInSplit",
+        "title": "Session Resume: Resume in Split",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "sessionResume.renameSession",
+        "title": "Session Resume: Rename Terminal",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "sessionResume.pinSession",
+        "title": "Session Resume: Pin Terminal",
+        "icon": "$(pin)"
+      },
+      {
+        "command": "sessionResume.unpinSession",
+        "title": "Session Resume: Unpin Terminal",
+        "icon": "$(pinned)"
+      },
+      {
+        "command": "sessionResume.previewHistory",
+        "title": "Session Resume: Preview Recent Commands",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "sessionResume.resumeAll",
+        "title": "Session Resume: Resume All Saved Terminals",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "sessionResume.refreshSessions",
+        "title": "Session Resume: Refresh Saved Terminals",
+        "icon": "$(refresh)"
+      }
+    ],
+    "configuration": {
+      "title": "Console Session Resume",
+      "properties": {
+        "sessionResume.startupMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "login",
+            "interactive"
+          ],
+          "default": "auto",
+          "description": "Startup files to load: auto uses login profiles on macOS and .bashrc on Linux."
+        },
+        "sessionResume.historySize": {
+          "type": "integer",
+          "default": 20000,
+          "minimum": 100,
+          "maximum": 1000000,
+          "description": "Maximum entries for Bash, Zsh and PowerShell histories. Fish manages its own history retention. Shell history exclusion rules still apply."
+        },
+        "sessionResume.shellPaths": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": false,
+          "properties": {
+            "bash": {
+              "type": "string",
+              "description": "Absolute executable path for bash"
+            },
+            "zsh": {
+              "type": "string",
+              "description": "Absolute executable path for zsh"
+            },
+            "fish": {
+              "type": "string",
+              "description": "Absolute executable path for fish"
+            },
+            "pwsh": {
+              "type": "string",
+              "description": "Absolute executable path for pwsh"
+            },
+            "powershell": {
+              "type": "string",
+              "description": "Absolute executable path for powershell"
+            }
+          },
+          "scope": "machine",
+          "description": "Override shell executable paths on the terminal host. Otherwise executables are found on PATH."
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "sessionResume.sessions",
+          "name": "Saved Terminals",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "sessionResume.sessions",
+        "contents": "Keep each terminal\u2019s command history with its project.\n[Create a terminal](command:sessionResume.newTerminal)\n[Choose a default shell](command:sessionResume.useAsDefault)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sessionResume.newTerminal",
+          "when": "view == sessionResume.sessions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sessionResume.resumeTerminal",
+          "when": "view == sessionResume.sessions",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sessionResume.refreshSessions",
+          "when": "view == sessionResume.sessions",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sessionResume.resumeAll",
+          "when": "view == sessionResume.sessions",
+          "group": "1_resume"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sessionResume.resumeInSplit",
+          "when": "view == sessionResume.sessions && viewItem =~ /sessionSaved/",
+          "group": "inline@1"
+        },
+        {
+          "command": "sessionResume.previewHistory",
+          "when": "view == sessionResume.sessions && viewItem =~ /session/",
+          "group": "inline@2"
+        },
+        {
+          "command": "sessionResume.renameSession",
+          "when": "view == sessionResume.sessions && viewItem =~ /session/",
+          "group": "1_manage@1"
+        },
+        {
+          "command": "sessionResume.pinSession",
+          "when": "view == sessionResume.sessions && viewItem =~ /^session(Open|Saved)$/",
+          "group": "1_manage@2"
+        },
+        {
+          "command": "sessionResume.unpinSession",
+          "when": "view == sessionResume.sessions && viewItem =~ /Pinned$/",
+          "group": "1_manage@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:shell": "python3 -m unittest discover -s test -p '*_test.py' -v",
+    "package": "python3 scripts/package.py",
+    "test:vscode": "python3 scripts/test-vscode.py"
+  }
+}
