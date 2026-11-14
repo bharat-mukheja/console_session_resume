@@ -12,7 +12,7 @@ Keep an API terminal, a test terminal, and a database terminal with their own hi
 Give them names, pin the ones you use most, and return to the right commands after
 closing the project or rebooting.
 
-![Saved Terminals in a fresh sample VS Code window](images/screenshots/saved-terminals.png)
+![Saved Terminals in a fresh sample VS Code window](images/screenshots/saved-terminals.jpg)
 
 ## Install and use
 
@@ -49,7 +49,7 @@ tree. Click a session to open it. Its context menu offers **Rename**, **Pin/Unpi
 **Preview Recent Commands**, and **Resume in Split**. The view's menu also includes
 **Resume All Saved Terminals**, which skips sessions that are already open.
 
-![Native resume picker with command search and row actions](images/screenshots/resume-picker.png)
+![Native resume picker with command search and row actions](images/screenshots/resume-picker.jpg)
 
 The picker provides the same actions as buttons on each row. Pinning or renaming
 keeps the current search text. A history preview opens a copy of the last 30
@@ -57,7 +57,7 @@ recorded commands in an editor; editing that copy does not change shell history.
 Previews read existing native history files and preserve the shell's history
 exclusion rules. They do not execute commands or create a second command log.
 
-![Recent-command preview from a saved sample terminal](images/screenshots/command-preview.png)
+![Recent-command preview from a saved sample terminal](images/screenshots/command-preview.jpg)
 
 New terminals get names such as `my-project · Bash 1`. The explicit **New Terminal**
 command lets you name a terminal, and renaming an open terminal updates both its

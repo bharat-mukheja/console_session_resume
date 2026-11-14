@@ -35,7 +35,7 @@ async function main() {
   assert.equal(shipped.name, 'console-session-resume');
   for (const required of ['extension/src/extension.js', 'extension/shell/zsh/.zshenv', 'extension/shell/zsh/.zshrc',
     'extension/shell/bootstrap.bash', 'extension/shell/bootstrap.ps1', 'extension/shell/bootstrap.fish', 'extension/images/icon-256.png',
-    'extension/images/screenshots/saved-terminals.png', 'extension/images/screenshots/resume-picker.png', 'extension/images/screenshots/command-preview.png',
+    'extension/images/screenshots/saved-terminals.jpg', 'extension/images/screenshots/resume-picker.jpg', 'extension/images/screenshots/command-preview.jpg',
     'extension/PRIVACY.md', 'extension/SUPPORT.md', 'extension/changelog.md', 'extension/LICENSE.txt']) {
     assert.ok(names.includes(required), `Missing runtime file: ${required}`);
   }

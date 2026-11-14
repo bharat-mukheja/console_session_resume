@@ -22,11 +22,13 @@ async function run() {
   const testShell = process.platform === 'win32' ? 'pwsh' : 'bash';
   const home = path.join(project, 'home');
   fs.mkdirSync(home, { recursive: true });
+  // Keep hosted-runner system customizations out of this isolated fixture.
+  fs.writeFileSync(path.join(home, '.zshenv'), 'setopt NO_GLOBAL_RCS\n');
   process.env.HOME = home;
   process.env.XDG_DATA_HOME = path.join(home, '.local', 'share');
   const hostPlatform = process.platform === 'darwin' ? 'osx' : process.platform === 'win32' ? 'windows' : 'linux';
   await vscode.workspace.getConfiguration('terminal.integrated').update(`env.${hostPlatform}`,
-    { HOME: home, USERPROFILE: home, XDG_DATA_HOME: process.env.XDG_DATA_HOME, APPDATA: path.join(home, 'AppData', 'Roaming'), LOCALAPPDATA: path.join(home, 'AppData', 'Local') }, vscode.ConfigurationTarget.Global);
+    { HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: path.join(home, '.config'), XDG_DATA_HOME: process.env.XDG_DATA_HOME, APPDATA: path.join(home, 'AppData', 'Roaming'), LOCALAPPDATA: path.join(home, 'AppData', 'Local') }, vscode.ConfigurationTarget.Global);
   const extension = vscode.extensions.getExtension(`${require('../../package.json').publisher}.${require('../../package.json').name}`);
   assert.ok(extension, 'Extension is registered with the actual VS Code host');
   const api = await extension.activate();

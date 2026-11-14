@@ -22,6 +22,7 @@ class AdapterShell(Shell):
             "CSR_SESSION_ID": directory.name, "CSR_SESSION_DIR": str(directory),
             "CSR_HISTORY_FILE": str(directory / "history"), "CSR_HISTORY_SIZE": "20000",
             "CSR_INTEGRATION_SCRIPT": "", "XDG_DATA_HOME": str(home / ".local/share"),
+            "XDG_CONFIG_HOME": str(home / '.config'),
             "CSR_BOOTSTRAP": str(ROOT / "shell" / f"bootstrap.{ 'ps1' if kind == 'pwsh' else kind}"),
             "PSModuleAnalysisCachePath": str(home / "module-cache"),
         })
@@ -66,6 +67,7 @@ class OtherShellTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="session-resume-adapters-")
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
+        (self.home / '.zshenv').write_text('setopt NO_GLOBAL_RCS\n')
         (self.home / ".zsh_history").write_text("echo GLOBAL_ZSH_MUST_NOT_APPEAR\n")
         (self.home / ".zshrc").write_text(
             "PROMPT='__CSR_TEST_PROMPT__> '\nHISTFILE=$HOME/.zsh_history\nSAVEHIST=1000\nsetopt SHARE_HISTORY\n")
