@@ -43,12 +43,12 @@ that a platform test passed. Windows PowerShell requires PSReadLine.
 
 ## Public listing files
 
-The source repository is private. Default GitHub image rewriting would create URLs
-that Marketplace visitors cannot load. Host only the approved listing assets and
-public documentation in a public repository, or explicitly decide to publish the
-source repository. Do not change repository visibility as a packaging workaround.
+The source repository is public with the owner's explicit approval. It hosts the
+approved PNG icon, three real screenshots, and public documentation. Default
+GitHub rewriting can serve these files; the release configuration can instead pin
+the URLs to an exact commit for a reproducible listing.
 
-Once the chosen public location exists, configure repository Actions variables:
+Configure repository Actions variables:
 
 - `MARKETPLACE_BASE_IMAGES_URL`: raw HTTPS repository root containing `images/`.
 - `MARKETPLACE_BASE_CONTENT_URL`: public HTTPS blob root containing `PRIVACY.md`,
