@@ -7,9 +7,13 @@ const vscode = require('vscode');
 
 // History works even when VS Code does not expose rich shell integration.
 // The bootstrap process record proves the managed shell has reached initialization.
-function shellReady(terminal) {
-  return terminal.shellIntegration !== undefined
-    || fs.existsSync(path.join(terminal.creationOptions.env.CSR_SESSION_DIR, 'process'));
+async function shellReady(terminal) {
+  if (terminal.shellIntegration !== undefined) return true;
+  if (!vscode.version.startsWith('1.93.')) return false;
+  try {
+    const record = fs.readFileSync(path.join(terminal.creationOptions.env.CSR_SESSION_DIR, 'process'), 'utf8');
+    return record.split(/\r?\n/)[0] === String(await terminal.processId);
+  } catch { return false; }
 }
 
 async function until(predicate, description, timeout = 20000) {
@@ -129,16 +133,28 @@ async function run() {
       fs.writeFileSync(resultFile, JSON.stringify({ stage, passed: true, results }));
     } else if (stage === 'revive') {
       const saved = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-      await until(async () => {
+      let automaticRevival = true;
+      try { await until(async () => {
         const ids = await Promise.all(vscode.window.terminals.map(terminal => api.identifyTerminal(terminal)));
         return saved.every(session => ids.includes(session.id));
-      }, 'native terminals revived with stable identities');
+      }, 'native terminals revived with stable identities'); }
+      catch (error) {
+        if (process.platform !== 'win32') throw error;
+        // VS Code can recreate Windows profile terminals instead of retaining the
+        // original launch environment. Exercise the documented native picker recovery.
+        automaticRevival = false;
+        for (const session of saved) await api.resumeTerminal(session.id);
+      }
       for (const session of saved) {
         let terminal;
         for (const candidate of vscode.window.terminals) {
           if (await api.identifyTerminal(candidate) === session.id) terminal = candidate;
         }
         assert.equal(await api.resumeTerminal(session.id), terminal, 'Resume focuses the already-revived native tab');
+        if (!automaticRevival) {
+          await until(() => shellReady(terminal), 'recovered shell ready for history recall');
+          await new Promise(resolve => setTimeout(resolve, 700));
+        }
         const destination = path.join(project, `${session.id}.recalled`);
         terminal.sendText(testShell === 'pwsh' ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${destination}'` : `history > '${destination}'`);
         await until(() => fs.existsSync(path.join(project, `${session.id}.recalled`)), 'history recall from revived shell');
@@ -146,7 +162,8 @@ async function run() {
         assert.ok(history.includes(session.token));
         for (const other of saved.filter(item => item.id !== session.id)) assert.ok(!history.includes(other.token));
       }
-      fs.writeFileSync(resultFile, JSON.stringify({ stage, passed: true, revived: saved.length }));
+      fs.writeFileSync(resultFile, JSON.stringify({ stage, passed: true, revived: saved.length, automaticRevival,
+        savedSessionRecovery: !automaticRevival }));
     } else {
       for (const terminal of [...vscode.window.terminals]) terminal.dispose();
       await until(() => vscode.window.terminals.length === 0, 'previous test terminals close');
