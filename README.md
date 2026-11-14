@@ -29,9 +29,10 @@ closing the project or rebooting.
 3. Open new terminals with the normal **+** button. Each gets its own saved history.
    You can also choose another `… (Session Resume)` profile from the terminal menu,
    or run **Session Resume: New Terminal**.
-4. Close/reopen the project or reboot and reopen it. VS Code revives the tabs with
-   their original history identities. If VS Code loses a tab or you previously
-   closed it, use **Session Resume: Resume Saved Terminal** in that same workspace.
+4. Close/reopen the project or reboot and reopen it. If VS Code restores the original
+   launch configuration, the tab reuses its history automatically. Otherwise, click
+   **Resume** and choose the original saved terminal in that same workspace. This
+   also recovers terminals you previously closed.
 
 Only managed terminals are recorded. Commands from before installation cannot be
 separated retrospectively from a previously merged global history.
@@ -76,10 +77,11 @@ Close an old terminal in another window before trying to resume it here.
 ## How it works
 
 The extension assigns a UUID **before launching** a terminal. That UUID and the
-history location are in the native terminal's launch environment. VS Code persists
-the launch environment when reviving a terminal, so a fresh shell process reuses
-the same history rather than loading the user's shared history. Recovery metadata
-is also stored on disk for the saved-session picker.
+history location are in the native terminal's launch environment. When VS Code
+preserves that launch configuration, a fresh shell process reuses the same history.
+Some VS Code versions/platforms recreate profile terminals with new configurations;
+the saved-session picker restores the original UUID and history in that case.
+Recovery metadata is stored on disk independently of VS Code's tab snapshot.
 
 | Shell | Native history adapter |
 | --- | --- |
@@ -126,7 +128,9 @@ telemetry, command replay, or automatic execution of previous commands is used.
 Running processes, shell variables, activated environments, and unsaved input do
 not survive reboot. Bash saves when the prompt returns: a command still running
 at a sudden shutdown may not yet be saved. VS Code's tab restoration can itself
-fail after a crash; the saved-session picker does not depend on that snapshot.
+fail or recreate a fresh profile terminal; the saved-session picker does not depend
+on that snapshot. Automatic restoration was observed to vary in hosted Windows and
+macOS runs of VS Code 1.146.0. Use **Resume** to select the original session.
 
 ## Settings
 

@@ -120,7 +120,7 @@ async function run() {
         await until(() => !vscode.window.terminals.includes(terminal), `${shell} closes`);
         const resumed = await api.resumeTerminal(env.CSR_SESSION_ID);
         await until(() => shellReady(resumed), `${shell} resumed shell initialization`);
-        await new Promise(resolve => setTimeout(resolve, 700));
+        await new Promise(resolve => setTimeout(resolve, ['pwsh', 'powershell'].includes(shell) ? 2000 : 700));
         const recallFile = path.join(project, `${shell}.recall`);
         const command = shell === 'zsh' ? `fc -l 1 > '${recallFile}'`
           : ['pwsh', 'powershell'].includes(shell) ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${recallFile}'`
@@ -139,8 +139,8 @@ async function run() {
         return saved.every(session => ids.includes(session.id));
       }, 'native terminals revived with stable identities'); }
       catch (error) {
-        if (process.platform !== 'win32') throw error;
-        // VS Code can recreate Windows profile terminals instead of retaining the
+        if (!error.message.includes('native terminals revived with stable identities')) throw error;
+        // VS Code can recreate profile terminals instead of retaining the
         // original launch environment. Exercise the documented native picker recovery.
         automaticRevival = false;
         for (const session of saved) await api.resumeTerminal(session.id);
@@ -153,7 +153,7 @@ async function run() {
         assert.equal(await api.resumeTerminal(session.id), terminal, 'Resume focuses the already-revived native tab');
         if (!automaticRevival) {
           await until(() => shellReady(terminal), 'recovered shell ready for history recall');
-          await new Promise(resolve => setTimeout(resolve, 700));
+          await new Promise(resolve => setTimeout(resolve, testShell === 'pwsh' ? 2000 : 700));
         }
         const destination = path.join(project, `${session.id}.recalled`);
         terminal.sendText(testShell === 'pwsh' ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${destination}'` : `history > '${destination}'`);
