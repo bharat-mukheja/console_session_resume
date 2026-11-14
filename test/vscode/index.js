@@ -5,6 +5,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vscode = require('vscode');
 
+// History works even when VS Code does not expose rich shell integration.
+// The bootstrap process record proves the managed shell has reached initialization.
+function shellReady(terminal) {
+  return terminal.shellIntegration !== undefined
+    || fs.existsSync(path.join(terminal.creationOptions.env.CSR_SESSION_DIR, 'process'));
+}
+
 async function until(predicate, description, timeout = 20000) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
@@ -38,7 +45,7 @@ async function run() {
     if (stage === 'ux') {
       const terminal = await api.newTerminal({ name: 'API server', cwd: project, shell: testShell });
       const id = terminal.creationOptions.env.CSR_SESSION_ID;
-      await until(() => terminal.shellIntegration !== undefined, 'resume UX fixture shell');
+      await until(() => shellReady(terminal), 'resume UX fixture shell');
       terminal.sendText('echo READY_FOR_RESUME');
       await until(() => fs.readFileSync(terminal.creationOptions.env.CSR_HISTORY_FILE, 'utf8').includes('READY_FOR_RESUME'), 'resume preview fixture saved');
       await api.renameSession(id, 'Backend API');
@@ -98,7 +105,7 @@ async function run() {
       for (const shell of Object.keys(shellPaths).filter(kind => fs.existsSync(shellPaths[kind]))) {
         const terminal = await api.newTerminal({ name: `Native ${shell}`, shell, cwd: project });
         const env = terminal.creationOptions.env;
-        await until(() => terminal.shellIntegration !== undefined, `${shell} native shell integration`, 30000);
+        await until(() => shellReady(terminal), `${shell} managed shell initialization`, 30000);
         // The integration handshake can precede PSReadLine's first input read.
         await new Promise(resolve => setTimeout(resolve, 700));
         const token = `CSR_ADAPTER_${shell.toUpperCase()}_${env.CSR_SESSION_ID}`;
@@ -108,7 +115,7 @@ async function run() {
         terminal.dispose();
         await until(() => !vscode.window.terminals.includes(terminal), `${shell} closes`);
         const resumed = await api.resumeTerminal(env.CSR_SESSION_ID);
-        await until(() => resumed.shellIntegration !== undefined, `${shell} resumed shell integration`);
+        await until(() => shellReady(resumed), `${shell} resumed shell initialization`);
         await new Promise(resolve => setTimeout(resolve, 700));
         const recallFile = path.join(project, `${shell}.recall`);
         const command = shell === 'zsh' ? `fc -l 1 > '${recallFile}'`
@@ -151,7 +158,7 @@ async function run() {
         const id = terminal.creationOptions.env.CSR_SESSION_ID;
         const history = terminal.creationOptions.env.CSR_HISTORY_FILE;
         const token = `CSR_NATIVE_${name.toUpperCase()}_${id}`;
-        await until(() => terminal.shellIntegration !== undefined, 'native Bash shell integration');
+        await until(() => shellReady(terminal), 'native managed shell initialization');
         await new Promise(resolve => setTimeout(resolve, 700));
         terminal.sendText(`echo ${token}`);
         await until(() => fs.readFileSync(history, 'utf8').includes(token), 'history written to disk');
