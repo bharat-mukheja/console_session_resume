@@ -170,26 +170,28 @@ adapter in real VS Code terminals. A graphical VS Code installation is required.
 
 ### Verified behavior
 
-On macOS with VS Code 1.144.1, the following checks passed:
+[All seven jobs passed](https://github.com/bharat-mukheja/console_session_resume/actions/runs/43601526055)
+on the release candidate, covering unit tests, VSIX contents, native terminal
+creation/splits, editor restart, separate histories, command previews, names,
+pins, keyboard selection, and resume into a native split.
 
-- Node tests covering isolation, persistent IDs, recovery, permissions,
-  workspace boundaries, recognition of renamed revived terminals, preview formats,
-  search grouping, cancellation, pins, renaming, and concurrent resume requests.
-- Five current PTY checks passed for available Bash, Zsh, and PowerShell shells;
-  the Fish check was skipped because Fish is not currently installed. Prior
-  0.2.0 checks also covered Fish 4.9.3. These cover fresh processes after forced termination,
-  separate histories, native Up-arrow recall, multiline Bash history, and startup hooks.
-- Real VS Code terminal creation, independent native splits, complete editor
-  exit/reopen, recognition of already-revived tabs, and the Bash, Zsh and PowerShell adapters.
-- Native Saved Terminals tree, recent-command previews, tab renaming, pinned
-  sessions, keyboard selection in the resume picker, and resume into a native split.
+| Host | VS Code | Native history adapters checked |
+| --- | --- | --- |
+| Windows | 1.146.0 | Git Bash, PowerShell, Windows PowerShell |
+| Linux | 1.146.0 and 1.93.0 | Bash, Zsh, Fish, PowerShell |
+| macOS | 1.146.0 | Bash, Zsh, Fish, PowerShell |
 
-The native UI tests use temporary shell homes and a separate VS Code user profile.
-Windows PowerShell 5.1 and Git Bash have not yet been exercised on a Windows host.
-The included CI workflow is configured to test Windows, Linux, macOS, and the
-minimum supported VS Code version; configuration alone is not a passing result.
-The host computer was not rebooted; persistence was verified by ending the shell
-and editor processes and then reopening them from disk.
+The Windows restart check recovered the original histories through Saved Terminals.
+Linux and macOS restored them automatically in the final run. Automatic revival
+also varied in earlier macOS runs; the saved-session recovery path is independent
+of VS Code's tab snapshot. See [validation evidence](docs/validation-0.3.0.md).
+
+All 16 Node tests passed on Windows, Linux, and macOS. POSIX PTY checks exercised
+separate shell processes, forced termination, native Up-arrow recall, multiline
+Bash commands, and unchanged shared histories. The native tests used temporary
+shell homes and separate VS Code profiles. Remote hosts have not been validated.
+The physical host was not rebooted; shells and editors were ended and reopened
+from their saved files.
 
 ## Privacy and support
 

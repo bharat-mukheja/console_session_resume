@@ -13,7 +13,8 @@ If upgrading from the earlier `local-tools` build, disable that extension and re
 before enabling the `bmukheja` build. Keep its storage files until the imported
 sessions appear under Saved Terminals. Original histories are preserved.
 
-This is a preview release. Current local verification covers macOS with Bash,
-Zsh and PowerShell 7. Fish passed earlier 0.2.0 checks; it is not installed for the
-current local run. Windows PowerShell 5.1, Git Bash, Linux and remote hosts require
-additional platform validation before their behavior can be claimed as verified.
+This is a preview release. CI verified native history recovery on Windows, Linux,
+and macOS, including the Windows PowerShell and Git Bash adapters on Windows.
+Windows used Saved Terminals to recover histories after editor restart in the final
+run. VS Code's automatic tab revival can vary; use **Resume** to select the original
+saved session. Remote hosts still need separate validation.
