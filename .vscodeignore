@@ -11,6 +11,7 @@ test/**
 **/*.pyc
 .DS_Store
 .gitignore
+.gitattributes
 .vscodeignore
 package-lock.json
 PUBLISHING.md

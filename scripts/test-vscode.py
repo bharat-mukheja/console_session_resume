@@ -59,12 +59,14 @@ subprocess.run([sys.executable, str(root / "scripts/package.py")], check=True)
 base = code_command + ["--user-data-dir", str(user), "--extensions-dir", str(extensions)]
 subprocess.run(base + ["--install-extension", str(root / f"dist/console-session-resume-{version}.vsix"), "--force"], check=True, timeout=60)
 results = []
+# Match the official test-electron runner's sandbox flags in disposable CI hosts.
+launch_flags = ["--no-sandbox", "--disable-gpu-sandbox"] if os.environ.get("CI") else []
 for stage in os.environ.get("CSR_TEST_STAGES", "create,revive,adapters,ux").split(","):
     result_file = project / "test-result.json"
     result_file.unlink(missing_ok=True)
     (project / "stage.txt").write_text(stage)
     print(f"Testing native VS Code terminals: {stage}", flush=True)
-    subprocess.run(base + ["--new-window", "--wait", f"--extensionDevelopmentPath={harness}",
+    subprocess.run(base + launch_flags + ["--new-window", "--wait", f"--extensionDevelopmentPath={harness}",
         "--skip-welcome", "--skip-release-notes", "--disable-workspace-trust", "--disable-extension", "local-tools.console-session-resume", str(project)], check=True, timeout=180)
     # --wait releases when the window closes, before main finishes flushing its
     # terminal snapshot. Wait for the isolated main process to exit before reopening.
