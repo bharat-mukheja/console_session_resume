@@ -2,8 +2,8 @@
   "name": "console-session-resume",
   "displayName": "Console Session Resume",
   "description": "Separate, reboot-persistent command history for native Bash, Zsh, Fish, and PowerShell terminals.",
-  "version": "0.2.0",
-  "publisher": "local-tools",
+  "version": "0.3.0",
+  "publisher": "bmukheja",
   "license": "MIT",
   "engines": {
     "vscode": "^1.93.0"
@@ -20,6 +20,9 @@
   ],
   "capabilities": {
     "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
       "supported": false
     }
   },
@@ -229,7 +232,49 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:shell": "python3 -m unittest discover -s test -p '*_test.py' -v",
-    "package": "python3 scripts/package.py",
-    "test:vscode": "python3 scripts/test-vscode.py"
+    "package": "node scripts/package.js",
+    "test:vscode": "python3 scripts/test-vscode.py",
+    "package:files": "vsce ls",
+    "verify:package": "node scripts/verify-package.js"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.1.1",
+    "yauzl": "3.4.0"
+  },
+  "preview": true,
+  "icon": "images/icon-256.png",
+  "author": {
+    "name": "Bharat Kumar Mukheja",
+    "url": "https://github.com/bharat-mukheja"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bharat-mukheja/console_session_resume.git"
+  },
+  "homepage": "https://marketplace.visualstudio.com/items?itemName=bmukheja.console-session-resume",
+  "bugs": {
+    "url": "https://marketplace.visualstudio.com/items?itemName=bmukheja.console-session-resume&ssr=false#qna"
+  },
+  "keywords": [
+    "terminal",
+    "history",
+    "session",
+    "resume",
+    "bash",
+    "zsh",
+    "fish",
+    "powershell"
+  ],
+  "galleryBanner": {
+    "color": "#091326",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "qna": "marketplace",
+  "overrides": {
+    "@vscode/vsce": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

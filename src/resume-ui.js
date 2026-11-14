@@ -44,7 +44,7 @@ function quickPickItems(sessions, vscode) {
       items.push({
         label: literal(session.name),
         description: `${shellLabel(session)} · ${session.terminal ? 'Open' : 'Saved'} · ${relativeTime(session.updatedAt)}`,
-        detail: literal(`${shortPath(session.cwd)}${recent ? '   —   ' + recent : '   —   No recorded commands yet'}`),
+        detail: literal(`${recent || 'No recorded commands yet'}   —   ${shortPath(session.cwd)}`),
         session,
         buttons: [
           { iconPath: new vscode.ThemeIcon(session.pinned ? 'pinned' : 'pin'), tooltip: session.pinned ? 'Unpin terminal' : 'Pin terminal', action: 'pin' },

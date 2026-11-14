@@ -53,7 +53,7 @@ function installBootstraps(root, extensionPath) {
 function historyPath(session, store) {
   return session.shell === 'fish'
     ? path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'fish', `csr_${session.id.replaceAll('-', '_')}_history`)
-    : path.join(store.directory(session.id), 'history');
+    : path.join(store.runtimeDirectory(session.id), 'history');
 }
 
 function launchOptions(session, { store, config, appRoot, shellIntegration = true }) {
@@ -61,7 +61,7 @@ function launchOptions(session, { store, config, appRoot, shellIntegration = tru
   const spec = SHELLS[kind];
   const shellPath = findExecutable(kind, config.get('shellPaths', {})[kind]);
   if (process.platform === 'win32' && ['zsh', 'fish'].includes(kind)) throw new Error(`${kind} requires a WSL or Remote SSH window on Windows.`);
-  const directory = store.directory(session.id);
+  const directory = store.runtimeDirectory(session.id);
   const script = path.join(store.root, spec.script);
   const integration = path.join(appRoot, 'out', 'vs', 'workbench', 'contrib', 'terminal', 'common', 'scripts', spec.integration);
   const fishName = `csr_${session.id.replaceAll('-', '_')}`;

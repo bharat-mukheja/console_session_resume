@@ -19,6 +19,7 @@ function processStart(pid) {
 }
 
 async function identifyTerminal(terminal, store, workspace, fingerprint = processStart) {
+  if (!terminal) return undefined;
   const supplied = terminal.creationOptions.env?.CSR_SESSION_ID;
   if (supplied) return supplied;
   // VS Code revives the launch environment correctly but omits it from the public
@@ -28,11 +29,18 @@ async function identifyTerminal(terminal, store, workspace, fingerprint = proces
   if (!started) return undefined;
   for (const session of store.list(workspace)) {
     try {
-      const [recordedPid, recordedStart] = fs.readFileSync(path.join(store.directory(session.id), 'process'), 'utf8').trim().split(/\r?\n/);
+      const [recordedPid, recordedStart] = fs.readFileSync(path.join(store.runtimeDirectory(session.id), 'process'), 'utf8').trim().split(/\r?\n/);
       if (recordedPid === String(pid) && recordedStart.trim() === started) return session.id;
     } catch { /* No live-process record for this saved session. */ }
   }
   return undefined;
 }
 
-module.exports = { identifyTerminal };
+function sessionIsRunning(id, store, fingerprint = processStart) {
+  try {
+    const [pid, started] = fs.readFileSync(path.join(store.runtimeDirectory(id), 'process'), 'utf8').trim().split(/\r?\n/);
+    return Boolean(started && fingerprint(Number(pid)) === started.trim());
+  } catch { return false; }
+}
+
+module.exports = { identifyTerminal, sessionIsRunning };

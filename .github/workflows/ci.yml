@@ -1,0 +1,77 @@
+name: Validate extension
+
+on:
+  push:
+    branches: [main, codex/marketplace-preparation]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run package
+      - run: npm run verify:package
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vsix-${{ runner.os }}
+          path: dist/*.vsix
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            vscode: stable
+          - os: ubuntu-latest
+            vscode: '1.93.0'
+          - os: macos-latest
+            vscode: stable
+          - os: windows-latest
+            vscode: stable
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      VSCODE_VERSION: ${{ matrix.vscode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh fish xvfb
+      - if: runner.os == 'macOS'
+        run: brew install fish
+      - if: runner.os != 'Windows'
+        run: npm run test:shell
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/ci-native.js
+      - if: runner.os != 'Linux'
+        run: node scripts/ci-native.js
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-${{ runner.os }}-${{ matrix.vscode }}
+          path: |
+            .test-work/validation.json
+            .test-work/project-*/test-result.json
+          if-no-files-found: ignore

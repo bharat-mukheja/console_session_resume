@@ -1,13 +1,28 @@
 # Console Session Resume
 
+![Console Session Resume icon](images/icon-256.png)
+
 Separate command history for each **native VS Code terminal**, across project closes,
 editor restarts, and computer reboots. Uses the shell's normal Up/Down and history
 search. No terminal multiplexer or replacement terminal UI.
 
+## Pick up where you left off
+
+Keep an API terminal, a test terminal, and a database terminal with their own histories.
+Give them names, pin the ones you use most, and return to the right commands after
+closing the project or rebooting.
+
+![Saved Terminals in a fresh sample VS Code window](images/screenshots/saved-terminals.png)
+
 ## Install and use
 
-1. In VS Code, run **Extensions: Install from VSIX...** and choose
-   `dist/console-session-resume-0.2.0.vsix`.
+**Publisher:** `bmukheja` · **Extension ID:** `bmukheja.console-session-resume`
+
+**Requires:** VS Code 1.93 or later and an installed supported shell. This is a preview.
+
+1. Install **Console Session Resume** by **bmukheja** from the Marketplace, or run
+   **Extensions: Install from VSIX...** and select the packaged preview
+   `console-session-resume-0.3.0.vsix`.
 2. Run **Session Resume: Use as Default Terminal** and choose an installed shell.
    This selects its managed profile and enables VS Code's terminal revival on both
    application exit and window close. Existing terminals retain their old profiles.
@@ -34,17 +49,29 @@ tree. Click a session to open it. Its context menu offers **Rename**, **Pin/Unpi
 **Preview Recent Commands**, and **Resume in Split**. The view's menu also includes
 **Resume All Saved Terminals**, which skips sessions that are already open.
 
+![Native resume picker with command search and row actions](images/screenshots/resume-picker.png)
+
 The picker provides the same actions as buttons on each row. Pinning or renaming
 keeps the current search text. A history preview opens a copy of the last 30
 recorded commands in an editor; editing that copy does not change shell history.
 Previews read existing native history files and preserve the shell's history
 exclusion rules. They do not execute commands or create a second command log.
 
+![Recent-command preview from a saved sample terminal](images/screenshots/command-preview.png)
+
 New terminals get names such as `my-project · Bash 1`. The explicit **New Terminal**
 command lets you name a terminal, and renaming an open terminal updates both its
 native tab and saved entry. Names and pins persist across editor restarts.
 
-Installing version 0.2.0 over 0.1.0 keeps the saved session IDs and history files.
+## Upgrading from a local VSIX
+
+The Marketplace extension uses the publisher `bmukheja`. If you installed an earlier
+`local-tools.console-session-resume` preview, disable that old extension and reload
+VS Code before using this version. Saved IDs, terminal names, pins, and histories
+are imported automatically from the old storage on the same host. The original
+files are preserved. Revived terminals can keep using their old files until closed;
+resuming a closed terminal adopts its latest saved history into the new storage.
+Close an old terminal in another window before trying to resume it here.
 
 ## How it works
 
@@ -116,14 +143,16 @@ No shell startup files are edited by installing this extension.
 
 ## Development
 
-No npm dependencies or build step are required. The extension runs as plain
-JavaScript in the VS Code extension host.
+The extension runs as plain JavaScript with no runtime npm dependencies.
+Development and packaging require Node.js 22 or later and the pinned dev tools.
 
 ```bash
+npm ci --ignore-scripts
 npm test
 npm run test:shell
 npm run test:vscode
 npm run package
+npm run verify:package
 ```
 
 The shell tests use temporary homes and PTYs. They kill the original processes,
@@ -139,30 +168,31 @@ adapter in real VS Code terminals. A graphical VS Code installation is required.
 
 On macOS with VS Code 1.144.1, the following checks passed:
 
-- Fourteen Node tests covering isolation, persistent IDs, recovery, permissions,
+- Node tests covering isolation, persistent IDs, recovery, permissions,
   workspace boundaries, recognition of renamed revived terminals, preview formats,
   search grouping, cancellation, pins, renaming, and concurrent resume requests.
-- Six PTY test groups using Bash 3.2.57 and 5.3.20, Zsh 5.9, Fish 4.9.3, and
-  PowerShell 7.6.6. These cover fresh processes after forced termination,
+- Five current PTY checks passed for available Bash, Zsh, and PowerShell shells;
+  the Fish check was skipped because Fish is not currently installed. Prior
+  0.2.0 checks also covered Fish 4.9.3. These cover fresh processes after forced termination,
   separate histories, native Up-arrow recall, multiline Bash history, and startup hooks.
 - Real VS Code terminal creation, independent native splits, complete editor
-  exit/reopen, recognition of already-revived tabs, and all four available adapters.
+  exit/reopen, recognition of already-revived tabs, and the Bash, Zsh and PowerShell adapters.
 - Native Saved Terminals tree, recent-command previews, tab renaming, pinned
   sessions, keyboard selection in the resume picker, and resume into a native split.
 
 The native UI tests use temporary shell homes and a separate VS Code user profile.
-Windows PowerShell 5.1 and Git Bash have not been exercised on a Windows host.
+Windows PowerShell 5.1 and Git Bash have not yet been exercised on a Windows host.
+The included CI workflow is configured to test Windows, Linux, macOS, and the
+minimum supported VS Code version; configuration alone is not a passing result.
 The host computer was not rebooted; persistence was verified by ending the shell
 and editor processes and then reopening them from disk.
 
-## Existing tools considered
+## Privacy and support
 
-- [VS Code terminal persistence](https://code.visualstudio.com/docs/terminal/advanced)
-  restores buffers and relaunches shells; its shared-history behavior is described
-  in [VS Code issue 276489](https://github.com/microsoft/vscode/issues/276489).
-- [Atuin](https://github.com/atuinsh/atuin) supports history filtering, but its
-  current-session filter alone does not give a revived native tab a stable identity.
-- [Terminal Keeper](https://marketplace.visualstudio.com/items?itemName=nguyenngoclong.terminal-keeper)
-  manages repeatable startup workflows rather than isolated native shell histories.
-- [tmux](https://github.com/tmux/tmux/wiki/Getting-Started) preserves live shells
-  across detach/reattach, but introduces a different navigation workflow.
+History stays on the terminal host as plaintext shell history. The extension sends
+no commands or telemetry to a server. Shell exclusion rules still apply; avoid
+putting credentials in commands you would not want saved.
+
+Read [Privacy](PRIVACY.md), [Support](SUPPORT.md), and [Changes](CHANGELOG.md).
+Use the extension's Marketplace **Q & A** tab for support. Licensed under the
+[MIT license](LICENSE).

@@ -1,0 +1,5 @@
+Mode: built-in image_gen, generate, opaque square PNG.
+Use case: logo-brand. Asset type: PNG icon for the Visual Studio Code extension Console Session Resume. Create one polished, exceptionally clear square app icon: a compact terminal window mark with a simple >_ prompt and a counterclockwise resume/history arrow integrated into the window outline. The concept is returning to the same terminal and its command history. Bold, geometric, flat vector-like design rendered as a raster PNG, crisp clean edges, generous margins, legible at 32 pixels. Dark midnight navy background, bright teal and soft mint mark, restrained subtle depth. Centered composition, square output, opaque background. No words, letters, brand logos, badge text, extra symbols, watermark, or screenshot. The >_ prompt is the only text-like element. Deliver a finished icon, not a mockup or presentation sheet.
+
+Approved source: images/icon.png
+Packaged derivative: images/icon-256.png, downsampled to 256 x 256 with sips.

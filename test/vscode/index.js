@@ -19,31 +19,32 @@ async function run() {
   const resultFile = path.join(project, 'test-result.json');
   const manifestFile = path.join(project, 'sessions.json');
   fs.writeFileSync(path.join(project, 'main.pid'), String(process.ppid));
+  const testShell = process.platform === 'win32' ? 'pwsh' : 'bash';
   const home = path.join(project, 'home');
   fs.mkdirSync(home, { recursive: true });
   process.env.HOME = home;
   process.env.XDG_DATA_HOME = path.join(home, '.local', 'share');
   const hostPlatform = process.platform === 'darwin' ? 'osx' : process.platform === 'win32' ? 'windows' : 'linux';
   await vscode.workspace.getConfiguration('terminal.integrated').update(`env.${hostPlatform}`,
-    { HOME: home, XDG_DATA_HOME: process.env.XDG_DATA_HOME }, vscode.ConfigurationTarget.Global);
-  const extension = vscode.extensions.getExtension('local-tools.console-session-resume');
+    { HOME: home, USERPROFILE: home, XDG_DATA_HOME: process.env.XDG_DATA_HOME, APPDATA: path.join(home, 'AppData', 'Roaming'), LOCALAPPDATA: path.join(home, 'AppData', 'Local') }, vscode.ConfigurationTarget.Global);
+  const extension = vscode.extensions.getExtension(`${require('../../package.json').publisher}.${require('../../package.json').name}`);
   assert.ok(extension, 'Extension is registered with the actual VS Code host');
   const api = await extension.activate();
   const stageFile = path.join(project, 'stage.txt');
   const stage = fs.existsSync(stageFile) ? fs.readFileSync(stageFile, 'utf8').trim() : (process.env.CSR_TEST_STAGE || 'create');
   try {
     if (stage === 'ux') {
-      const terminal = await api.newTerminal({ name: 'API server', cwd: project, shell: 'bash' });
+      const terminal = await api.newTerminal({ name: 'API server', cwd: project, shell: testShell });
       const id = terminal.creationOptions.env.CSR_SESSION_ID;
       await until(() => terminal.shellIntegration !== undefined, 'resume UX fixture shell');
       terminal.sendText('echo READY_FOR_RESUME');
       await until(() => fs.readFileSync(terminal.creationOptions.env.CSR_HISTORY_FILE, 'utf8').includes('READY_FOR_RESUME'), 'resume preview fixture saved');
       await api.renameSession(id, 'Backend API');
       await until(() => terminal.name === 'Backend API', 'renaming updates the native terminal tab');
-      const tests = api.store.create({ name: 'Test suite', cwd: project, shell: 'bash', workspace: api.workspace });
+      const tests = api.store.create({ name: 'Test suite', cwd: project, shell: testShell, workspace: api.workspace });
       fs.writeFileSync(path.join(api.store.directory(tests.id), 'history'), '#123\nnpm test\n');
       await api.pinSession(tests.id, true);
-      const database = api.store.create({ name: 'Database migrations', cwd: project, shell: 'bash', workspace: api.workspace });
+      const database = api.store.create({ name: 'Database migrations', cwd: project, shell: testShell, workspace: api.workspace });
       fs.writeFileSync(path.join(api.store.directory(database.id), 'history'), '#123\npython migrate.py\n');
       await api.sessionsView.refresh();
       const groups = api.sessionsView.provider.getChildren();
@@ -99,6 +100,7 @@ async function run() {
         // The integration handshake can precede PSReadLine's first input read.
         await new Promise(resolve => setTimeout(resolve, 700));
         const token = `CSR_ADAPTER_${shell.toUpperCase()}_${env.CSR_SESSION_ID}`;
+        await new Promise(resolve => setTimeout(resolve, 700));
         terminal.sendText(`echo ${token}`);
         await until(() => fs.existsSync(env.CSR_HISTORY_FILE) && fs.readFileSync(env.CSR_HISTORY_FILE, 'utf8').includes(token), `${shell} saves private history`);
         terminal.dispose();
@@ -108,7 +110,7 @@ async function run() {
         await new Promise(resolve => setTimeout(resolve, 700));
         const recallFile = path.join(project, `${shell}.recall`);
         const command = shell === 'zsh' ? `fc -l 1 > '${recallFile}'`
-          : shell === 'pwsh' ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${recallFile}'`
+          : ['pwsh', 'powershell'].includes(shell) ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${recallFile}'`
           : `history > '${recallFile}'`;
         resumed.sendText(command);
         await until(() => fs.existsSync(recallFile) && fs.readFileSync(recallFile, 'utf8').includes(token), `${shell} restores history`);
@@ -128,7 +130,8 @@ async function run() {
           if (await api.identifyTerminal(candidate) === session.id) terminal = candidate;
         }
         assert.equal(await api.resumeTerminal(session.id), terminal, 'Resume focuses the already-revived native tab');
-        terminal.sendText(`history > '${path.join(project, `${session.id}.recalled`)}'`);
+        const destination = path.join(project, `${session.id}.recalled`);
+        terminal.sendText(testShell === 'pwsh' ? `Get-Content -LiteralPath $env:CSR_HISTORY_FILE | Set-Content -LiteralPath '${destination}'` : `history > '${destination}'`);
         await until(() => fs.existsSync(path.join(project, `${session.id}.recalled`)), 'history recall from revived shell');
         const history = fs.readFileSync(path.join(project, `${session.id}.recalled`), 'utf8');
         assert.ok(history.includes(session.token));
@@ -142,19 +145,20 @@ async function run() {
       await vscode.workspace.getConfiguration('terminal.integrated').update('persistentSessionReviveProcess', 'onExitAndWindowClose', vscode.ConfigurationTarget.Workspace);
       const saved = [];
       for (const name of ['API', 'Tests']) {
-        const terminal = await api.newTerminal({ name, cwd: project, shell: 'bash' });
+        const terminal = await api.newTerminal({ name, cwd: project, shell: testShell });
         const id = terminal.creationOptions.env.CSR_SESSION_ID;
         const history = terminal.creationOptions.env.CSR_HISTORY_FILE;
         const token = `CSR_NATIVE_${name.toUpperCase()}_${id}`;
         await until(() => terminal.shellIntegration !== undefined, 'native Bash shell integration');
+        await new Promise(resolve => setTimeout(resolve, 700));
         terminal.sendText(`echo ${token}`);
         await until(() => fs.readFileSync(history, 'utf8').includes(token), 'history written to disk');
         saved.push({ id, history, token });
       }
       // Exercise VS Code's built-in split action, which must not reuse a history ID.
       const platform = process.platform === 'darwin' ? 'osx' : process.platform === 'win32' ? 'windows' : 'linux';
-      await vscode.commands.executeCommand('sessionResume.useAsDefault', 'bash');
-      await vscode.workspace.getConfiguration('terminal.integrated').update(`defaultProfile.${platform}`, 'Bash (Session Resume)', vscode.ConfigurationTarget.Workspace);
+      await vscode.commands.executeCommand('sessionResume.useAsDefault', testShell);
+      await vscode.workspace.getConfiguration('terminal.integrated').update(`defaultProfile.${platform}`, testShell === 'pwsh' ? 'PowerShell (Session Resume)' : 'Bash (Session Resume)', vscode.ConfigurationTarget.Workspace);
       // Terminal profile discovery refreshes asynchronously after settings change.
       await new Promise(resolve => setTimeout(resolve, 1500));
       const before = vscode.window.terminals.length;

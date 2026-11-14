@@ -5,16 +5,24 @@ const path = require('node:path');
 const os = require('node:os');
 const { SessionStore, workspaceKey } = require('./store');
 const { SHELLS, findExecutable, installBootstraps, launchOptions, historyPath } = require('./shells');
-const { identifyTerminal } = require('./identity');
+const { identifyTerminal, sessionIsRunning } = require('./identity');
+const manifest = require('../package.json');
 const { HistoryPreview } = require('./history');
 const { chooseSession, createSessionsView } = require('./resume-ui');
 
 function activate(context) {
-  return createController(context, require('vscode'));
+  const vscode = require('vscode');
+  const legacy = vscode.extensions.getExtension('local-tools.console-session-resume');
+  if (legacy && context.extension.id !== legacy.id) {
+    vscode.window.showWarningMessage('Disable the old local-tools Console Session Resume extension and reload VS Code to finish upgrading. Its saved histories will be imported automatically.');
+    return;
+  }
+  return createController(context, vscode);
 }
 
 function createController(context, vscode) {
-  const store = new SessionStore(context.globalStorageUri.fsPath);
+  const root = context.globalStorageUri.fsPath;
+  const store = new SessionStore(root, { legacyRoot: path.join(path.dirname(root), 'local-tools.console-session-resume') });
   // A revived terminal must not depend on an old version's extension install path.
   installBootstraps(store.root, context.extensionPath);
   const workspace = workspaceKey(vscode.workspace.workspaceFile
@@ -150,6 +158,10 @@ function createController(context, vscode) {
       refresh();
       return existing;
     }
+    if (session.legacyStorage) {
+      if (sessionIsRunning(id, store)) throw new Error('This saved terminal is still running in another window. Close it there before resuming it here.');
+      store.adoptLegacy(id);
+    }
     const launch = options(session);
     if (request.split && vscode.window.activeTerminal) launch.location = { parentTerminal: vscode.window.activeTerminal };
     const terminal = vscode.window.createTerminal(launch);
@@ -252,7 +264,7 @@ function createController(context, vscode) {
       const integrated = vscode.workspace.getConfiguration('terminal.integrated');
       const profiles = { ...integrated.get(`profiles.${platformSetting}`, {}) };
       profiles[SHELLS[shell].title] = {
-        extensionIdentifier: context.extension?.id || 'local-tools.console-session-resume',
+        extensionIdentifier: context.extension?.id || `${manifest.publisher}.${manifest.name}`,
         id: `sessionResume.${shell}`, title: SHELLS[shell].title
       };
       await integrated.update(`profiles.${platformSetting}`, profiles, vscode.ConfigurationTarget.Global);
@@ -275,7 +287,7 @@ function createController(context, vscode) {
       const id = await managedId(terminal);
       const cwd = terminal.shellIntegration?.cwd;
       if (!id || !cwd) return;
-      fs.writeFileSync(path.join(store.directory(id), 'cwd'), cwd.fsPath, { mode: 0o600 });
+      fs.writeFileSync(path.join(store.runtimeDirectory(id), 'cwd'), cwd.fsPath, { mode: 0o600 });
       const session = store.get(id);
       if (terminal.name && session.name !== terminal.name && !validateName(terminal.name)) store.update(id, { name: terminal.name });
       refresh();

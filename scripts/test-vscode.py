@@ -14,14 +14,19 @@ import time
 root = Path(__file__).resolve().parents[1]
 version = json.loads((root / "package.json").read_text())["version"]
 code = shutil.which("code")
-if not code:
+code_command = json.loads(os.environ["CSR_CODE_COMMAND"]) if os.environ.get("CSR_CODE_COMMAND") else [code]
+if not code_command[0]:
     raise SystemExit("VS Code's 'code' CLI is required.")
-shells = {kind: shutil.which(kind) for kind in ["bash", "zsh", "fish", "pwsh"]}
+shells = {kind: shutil.which(kind) for kind in ["bash", "zsh", "fish", "pwsh", "powershell"]}
 if os.environ.get("CSR_TEST_FISH"):
     shells["fish"] = os.environ["CSR_TEST_FISH"]
 shells = {kind: executable for kind, executable in shells.items() if executable}
-if "bash" not in shells:
-    raise SystemExit("The native restart test currently requires Bash on the test host.")
+if os.name == "nt":
+    git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+    if git_bash.exists():
+        shells["bash"] = str(git_bash)
+if "bash" not in shells and "pwsh" not in shells:
+    raise SystemExit("The native restart test requires Bash or PowerShell on the test host.")
 work = root / ".test-work"
 project = work / ("project-v" + version)
 user = work / "user"
@@ -38,7 +43,7 @@ if os.environ.get("CSR_TEST_HOLD_UI"):
     "security.workspace.trust.enabled": False, "update.mode": "none",
     "telemetry.telemetryLevel": "off", "workbench.startupEditor": "none",
     "window.restoreWindows": "all", "terminal.integrated.confirmOnExit": "never",
-    "terminal.integrated.confirmOnKill": "never",
+    "terminal.integrated.confirmOnKill": "never", "sessionResume.shellPaths": shells,
 }))
 (harness / "package.json").write_text(json.dumps({
     "name": "session-resume-harness", "publisher": "local-tests", "version": "0.0.1",
@@ -51,7 +56,7 @@ if os.environ.get("CSR_TEST_HOLD_UI"):
     + ").run(); } catch (error) { console.error(error); } finally { "
     "await require('vscode').commands.executeCommand('workbench.action.quit'); } };\n")
 subprocess.run([sys.executable, str(root / "scripts/package.py")], check=True)
-base = [code, "--user-data-dir", str(user), "--extensions-dir", str(extensions)]
+base = code_command + ["--user-data-dir", str(user), "--extensions-dir", str(extensions)]
 subprocess.run(base + ["--install-extension", str(root / f"dist/console-session-resume-{version}.vsix"), "--force"], check=True, timeout=60)
 results = []
 for stage in os.environ.get("CSR_TEST_STAGES", "create,revive,adapters,ux").split(","):
@@ -60,7 +65,7 @@ for stage in os.environ.get("CSR_TEST_STAGES", "create,revive,adapters,ux").spli
     (project / "stage.txt").write_text(stage)
     print(f"Testing native VS Code terminals: {stage}", flush=True)
     subprocess.run(base + ["--new-window", "--wait", f"--extensionDevelopmentPath={harness}",
-        "--skip-welcome", "--skip-release-notes", "--disable-workspace-trust", str(project)], check=True, timeout=180)
+        "--skip-welcome", "--skip-release-notes", "--disable-workspace-trust", "--disable-extension", "local-tools.console-session-resume", str(project)], check=True, timeout=180)
     # --wait releases when the window closes, before main finishes flushing its
     # terminal snapshot. Wait for the isolated main process to exit before reopening.
     main_pid = int((project / "main.pid").read_text())

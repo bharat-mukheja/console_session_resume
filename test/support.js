@@ -29,7 +29,10 @@ function fixture(t) {
     env: { appRoot: root },
     workspace: {
       workspaceFolders: [{ name: 'project-a', uri: { fsPath: root, toString: () => `file://${root}` } }],
-      getConfiguration: () => ({ get: (_key, fallback) => fallback, update: async (...args) => updates.push(args) }),
+      // These unit tests never execute a shell. Keep them independent of installed adapters.
+      getConfiguration: () => ({ get: (key, fallback) => key === 'shellPaths'
+        ? { bash: process.execPath, zsh: process.execPath, fish: process.execPath, pwsh: process.execPath, powershell: process.execPath }
+        : fallback, update: async (...args) => updates.push(args) }),
       openTextDocument: async options => ({ ...options, getText: () => options.content })
     },
     window: {
