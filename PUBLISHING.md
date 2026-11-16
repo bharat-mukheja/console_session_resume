@@ -1,8 +1,31 @@
 # Marketplace release guide
 
 Release candidate: **bmukheja.console-session-resume 0.3.0**, pre-release.
-Preparing a VSIX does not publish it. Publisher ownership, public image URLs, CI
-results, and the final Marketplace submission still need to be verified.
+The package, public image URLs and platform checks are complete. The initial
+Marketplace submission was accepted; Microsoft verification is the remaining
+step before installation can be confirmed.
+
+## Initial Marketplace submission
+
+On November 16, 2026, publisher ownership for `bmukheja` was verified in the signed-in
+Marketplace dashboard and version `0.3.0` was uploaded manually. The server accepted
+the upload and registered `Microsoft.VisualStudio.Code.PreRelease: true`; its
+verification was still pending at the last check. Confirm the dashboard finishes
+verification and the Marketplace install succeeds before calling the release live.
+
+Uploaded VSIX SHA-256:
+`e0e585a60bff35050d9f79d35ce74f5b2b527c48f848eea45d528c053ddc5d27`.
+The public Marketplace metadata reports the same digest as the local package.
+
+The first upload rejected a Marketplace URL used as the extension homepage.
+`homepage` now points to the public GitHub project, and `bugs.url` points to its
+issues page. Keep these project-specific URLs when packaging later releases.
+
+Manual uploads use **New extension → Visual Studio Code** for the first release
+and the existing extension's **Update** action for later versions. Upload a VSIX
+created with `npm run package`; the prepared package contains the pre-release flag.
+The OIDC workflow below is a separate future publishing path and still requires
+its exact publisher trust policy to be configured.
 
 ## Prepared in this repository
 
