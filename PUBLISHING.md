@@ -1,21 +1,31 @@
 # Marketplace release guide
 
-Release candidate: **bmukheja.console-session-resume 0.3.0**, pre-release.
-The package, public image URLs and platform checks are complete. The initial
-Marketplace submission was accepted; Microsoft verification is the remaining
-step before installation can be confirmed.
+Published: **bmukheja.console-session-resume 0.3.0**, pre-release.
+The public listing and a direct Marketplace installation were verified on
+November 16, 2026.
 
 ## Initial Marketplace submission
 
 On November 16, 2026, publisher ownership for `bmukheja` was verified in the signed-in
 Marketplace dashboard and version `0.3.0` was uploaded manually. The server accepted
-the upload and registered `Microsoft.VisualStudio.Code.PreRelease: true`; its
-verification was still pending at the last check. Confirm the dashboard finishes
-verification and the Marketplace install succeeds before calling the release live.
+the upload and registered `Microsoft.VisualStudio.Code.PreRelease: true`. Microsoft
+validation completed at approximately 16:07 UTC, and installation from Marketplace
+then succeeded in an isolated VS Code profile. The icon and listing screenshots are
+present on the public page:
+<https://marketplace.visualstudio.com/items?itemName=bmukheja.console-session-resume>.
+
+Install this preview with:
+
+```bash
+code --install-extension bmukheja.console-session-resume --pre-release
+```
 
 Uploaded VSIX SHA-256:
 `e0e585a60bff35050d9f79d35ce74f5b2b527c48f848eea45d528c053ddc5d27`.
 The public Marketplace metadata reports the same digest as the local package.
+The uploaded package used the source from commit
+`704a2636ab4b14491813b975ca8821d4a173a020` and listing asset/content URLs pinned to
+`a9a90c5b53d8a54663f06c9b4e75d9037fc440d2`.
 
 The first upload rejected a Marketplace URL used as the extension homepage.
 `homepage` now points to the public GitHub project, and `bugs.url` points to its
